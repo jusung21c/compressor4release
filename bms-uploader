@@ -1,0 +1,117 @@
+#!/usr/bin/python
+
+"""
+A simple scipt which uploads local binaries into
+the binary management system.
+
+"""
+from getpass import getpass
+import optparse
+import subprocess
+import sys
+import os
+
+
+HOSTNAME = "10.178.85.23"
+PORT = 8080
+
+PROG_VERSION = (0, 2)
+USAGE = "A simple wrapper script to upload binaries to the BMS.\nbms-uploader [options] filename"
+PARSER = optparse.OptionParser(usage=USAGE, version='.'.join(map(str, PROG_VERSION)))
+GROUP = PARSER.add_option_group('Options')
+GROUP.add_option('-u', '--username', dest='username', help='The username to upload')
+GROUP.add_option('-w', '--password', dest='password', help='The password for the username')
+GROUP.add_option('-m', '--module', dest='module', help='The module name (slugified name required)')
+GROUP.add_option('-p', '--platform', dest='platform', help='The platform name (slugified name required)')
+GROUP.add_option('-c', '--machine', dest='machine', help='The machine name (slugified name required)')
+GROUP.add_option('-t', '--toolchain', dest='toolchain', default="", help='The toolchain name')
+GROUP.add_option('-v', '--versioning', dest='version', help='The version for the uploading binary')
+GROUP.add_option('-o', '--is_official', dest='is_official', action='store_true', default=False,
+                 metavar="MODE", help='Whether the uploading binary is official (True/False)')
+GROUP.add_option('-g', '--use_original', dest='use_original', action='store_true', default=False,
+                 metavar="MODE", help='Whether the uploading binary keeps its own filename (True/False)')
+GROUP.add_option('-l', '--url', dest='url', default="", help='The source of the binary file')
+GROUP.add_option('-r', '--releasenote', dest='release_note', help='Release note for the binary')
+GROUP.add_option('-q', '--quiet', dest='is_quiet', action='store_true', default=False,
+                 metavar="MODE", help='Proceed without asking confirmation (True/False)')
+
+def get_user_input():
+    (options, args) = PARSER.parse_args(sys.argv[1:])
+
+    if len(args) != 1:
+        PARSER.error("The filename argument is missing")
+        sys.exit(1)
+
+    if not os.path.exists(args[0]) or not os.path.isfile(args[0]):
+        PARSER.error("The file does not exists or it is not a valid file")
+        sys.exit(1)
+
+    kwargs = {
+        'username': options.username,
+        'password': options.password,
+        'module': options.module,
+        'platform': options.platform,
+        'machine': options.machine,
+        'toolchain': options.toolchain,
+        'version': options.version,
+        'binary': args[0],
+        'is_official': options.is_official,
+        'use_original': options.use_original,
+        'url': options.url,
+        'release_note': options.release_note,
+        'is_quiet': options.is_quiet,
+        }
+
+    while not kwargs['username']:
+        kwargs['username'] = raw_input("Enter a username to login: ")
+    while not kwargs['password']:
+        kwargs['password'] = getpass("Enter a password: ")
+    while not kwargs['module']:
+        kwargs['module'] = raw_input("Enter a (slugified) module name: ")
+    while not kwargs['platform']:
+        kwargs['platform'] = raw_input("Enter a (slugified) platform name: ")
+    while not kwargs['machine']:
+        kwargs['machine'] = raw_input("Enter a (slugified) machine name: ")
+    while not kwargs['version']:
+        kwargs['version'] = raw_input("Enter a version: ")
+
+    return kwargs	
+	
+def upload_file(kwargs):
+    template = ['curl']
+    template.append('-F "username={username}"')
+    template.append('-F "password={password}"')
+    template.append('-F "toolchain={toolchain}"')
+    template.append('-F "version={version}"')
+    template.append('-F "binary=@{binary}"')
+    template.append('-F "is_official={is_official}"')
+    template.append('-F "use_original={use_original}"')
+    template.append('-F "url={url}"')
+    template.append('-F "release_note={release_note}"')
+    template.append('http://{hostname}:{port}/p/{module}/{platform}/{machine}/upload/')
+    template = ' '.join(template)
+    command = template.format(username=kwargs['username'],
+                              password=kwargs['password'],
+                              version=kwargs['version'],
+                              binary=kwargs['binary'],
+                              is_official=kwargs['is_official'],
+                              use_original=kwargs['use_original'],
+                              url=kwargs['url'],
+                              release_note=kwargs['release_note'],
+                              hostname=HOSTNAME,
+                              port=PORT,
+                              module=kwargs['module'],
+                              platform=kwargs['platform'],
+                              machine=kwargs['machine'],
+                              toolchain=kwargs['toolchain'])
+    return subprocess.call(command, shell=True)
+
+
+if __name__ == '__main__':
+    kwargs = get_user_input()
+    if not kwargs['is_quiet']:
+        response = raw_input("Proceed uploading the binary? (Y/N, default:N) ")
+        if response.upper() != 'Y':
+            print "Cancelled uploading the binary file.\n"
+            sys.exit(0)
+    upload_file(kwargs)
