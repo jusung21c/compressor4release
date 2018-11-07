@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "^2.4.1",
+    "clear": "^0.1.0",
     "create-symlink": "^1.0.0",
     "is-symbolic-link": "^2.0.3",
     "mkdirp": "^0.5.1",
