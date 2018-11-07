@@ -108,7 +108,7 @@ new Promise((resolve) => {
     })
     .then(() => tar.c({ z: false, f: path.join(outputPath, `${target.filename}.tar`), cwd : outputPath}, [`.\\${target.dirname}`]))
     .then(() => {
-        // exec(`cmd /c CHCP 65001 | "C:\\Program Files (x86)\\GnuWin32\\bin\\bzip2.exe" ${path.join(outputPath, + `${target.filename}.tar`)}"C:\\LP_Src\\IQS_18MY_Hybrid_Wide_STD\\Release\\release-compressor\\Output\\${filename}.tar"`, function callback(error, stdout, stderr){
+        // exec(`cmd /c CHCP 65001 | "C:\\Program Files (x86)\\GnuWin32\\bin\\bzip2.exe" ${path.join(outputPath, + `${target.filename}.tar`)}"C:\\LP_Src\\IQS_18MY_Hybrid_Wide_STD\\Release\\compressor4release\\Output\\${filename}.tar"`, function callback(error, stdout, stderr){
         console.log('bz2 압축을 시작합니다.');
         console.time('bz2');
         exec(`cmd /c CHCP 65001 | ${bzippath} -f ${path.join(outputPath, `${target.filename}.tar`)}`, function callback(error, stdout, stderr) {
